@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\migue\\source\\repos\\socialXX\\socialXX\\socialXX.csproj",
+      "projectUniqueName": "C:\\Users\\migue\\Source\\Repos\\socialXact\\socialXX.csproj",
       "projectName": "socialXX",
-      "projectPath": "C:\\Users\\migue\\source\\repos\\socialXX\\socialXX\\socialXX.csproj",
+      "projectPath": "C:\\Users\\migue\\Source\\Repos\\socialXact\\socialXX.csproj",
       "packagesPath": "C:\\Users\\migue\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\migue\\source\\repos\\socialXX\\socialXX\\obj\\",
+      "outputPath": "C:\\Users\\migue\\Source\\Repos\\socialXact\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
