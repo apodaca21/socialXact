@@ -1,0 +1,58 @@
+@model IEnumerable<SocialX.Models.Post>
+@{
+    ViewData["Title"] = "Inicio";
+}
+
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <h2 class="mb-3">Feed SocialX</h2>
+
+        @if (TempData["PostError"] != null)
+        {
+            <div class="alert alert-warning">@TempData["PostError"]</div>
+        }
+
+        <!-- Formulario para nueva publicación -->
+        <form asp-action="Create" method="post" class="mb-4">
+            <div class="mb-2">
+                <label class="form-label" for="content">¿Qué está pasando?</label>
+                <textarea id="content" name="content" class="form-control" rows="2" maxlength="140"
+                          placeholder="Escribe un mensaje (máx. 140 caracteres)"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Publicar</button>
+        </form>
+
+        <!-- Feed -->
+        @if (!Model.Any())
+        {
+            <p class="text-muted">Aún no hay publicaciones.</p>
+        }
+        else
+        {
+            <ul class="list-group">
+                @foreach (var post in Model)
+                {
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <strong>@(post.User?.UserName ?? "Usuario")</strong>
+                                <small class="text-muted">
+                                    · @post.CreatedAt.ToLocalTime().ToString("g")
+                                    @if (post.IsEdited)
+                                    {
+                                        <span>(editado)</span>
+                                    }
+                                </small>
+                            </div>
+                            @if (User.Identity?.Name == post.User?.UserName)
+                            {
+                                <a asp-action="Edit" asp-route-id="@post.Id" class="btn btn-link btn-sm">Editar</a>
+                            }
+                        </div>
+                        <p class="mt-2 mb-0">@post.Content</p>
+                    </li>
+                }
+            </ul>
+        }
+    </div>
+</div>
