@@ -7,12 +7,13 @@ using SocialX.Models;
 
 namespace SocialX.Controllers
 {
-    [Authorize] // Todas las operaciones requieren login
+    [Authorize]
     public class PostsController : Controller
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<IdentityUser> _userManager;
-        private const int FeedSize = 30; // Entre 15 y 50
+
+        private const int FeedSize = 30; // entre 15 y 50
 
         public PostsController(ApplicationDbContext context, UserManager<IdentityUser> userManager)
         {
@@ -20,7 +21,8 @@ namespace SocialX.Controllers
             _userManager = userManager;
         }
 
-        // GET: /Posts/Index (Home)
+        // Feed visible para todos
+        [AllowAnonymous]
         public async Task<IActionResult> Index()
         {
             var posts = await _context.Posts
@@ -32,27 +34,31 @@ namespace SocialX.Controllers
             return View(posts);
         }
 
-        // POST: Crear publicación
+        // Crear post (solo logueados)
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(string content)
+        public async Task<IActionResult> Create([Bind("Content")] Post post)
         {
-            if (string.IsNullOrWhiteSpace(content) || content.Length > 140)
+            if (!ModelState.IsValid)
             {
-                TempData["PostError"] = "El mensaje debe tener entre 1 y 140 caracteres.";
-                return RedirectToAction(nameof(Index));
+                var posts = await _context.Posts
+                    .Include(p => p.User)
+                    .OrderByDescending(p => p.CreatedAt)
+                    .Take(FeedSize)
+                    .ToListAsync();
+
+                return View("Index", posts);
             }
 
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
-                return Challenge(); // fuerza login
-
-            var post = new Post
             {
-                Content = content.Trim(),
-                UserId = user.Id,
-                CreatedAt = DateTime.UtcNow
-            };
+                return Challenge(); // fuerza login
+            }
+
+            post.UserId = user.Id;
+            post.CreatedAt = DateTime.UtcNow;
+            post.IsEdited = false;
 
             _context.Posts.Add(post);
             await _context.SaveChangesAsync();
@@ -60,61 +66,44 @@ namespace SocialX.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // GET: Editar publicación
+        // GET: Editar
         public async Task<IActionResult> Edit(int id)
         {
             var post = await _context.Posts.FindAsync(id);
-            if (post == null) return NotFound();
+            if (post == null)
+                return NotFound();
 
-            var userId = _userManager.GetUserId(User);
-            if (post.UserId != userId) return Forbid();
-
-            if (!CanEdit(post))
-            {
-                TempData["PostError"] = "Sólo puedes editar publicaciones con menos de 5 minutos.";
-                return RedirectToAction(nameof(Index));
-            }
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null || post.UserId != user.Id || !post.CanEdit)
+                return Forbid();
 
             return View(post);
         }
 
-        // POST: Guardar edición
+        // POST: Editar
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, string content)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Content")] Post edited)
         {
+            if (!ModelState.IsValid)
+                return View(edited);
+
             var post = await _context.Posts.FindAsync(id);
-            if (post == null) return NotFound();
+            if (post == null)
+                return NotFound();
 
-            var userId = _userManager.GetUserId(User);
-            if (post.UserId != userId) return Forbid();
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null || post.UserId != user.Id || !post.CanEdit)
+                return Forbid();
 
-            if (!CanEdit(post))
-            {
-                TempData["PostError"] = "Sólo puedes editar publicaciones con menos de 5 minutos.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            if (string.IsNullOrWhiteSpace(content) || content.Length > 140)
-            {
-                ModelState.AddModelError("Content", "El mensaje debe tener entre 1 y 140 caracteres.");
-                return View(post);
-            }
-
-            post.Content = content.Trim();
+            post.Content = edited.Content;
             post.IsEdited = true;
             post.UpdatedAt = DateTime.UtcNow;
 
+            _context.Update(post);
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
-        }
-
-        // Regla de 5 minutos
-        private bool CanEdit(Post post)
-        {
-            var diff = DateTime.UtcNow - post.CreatedAt;
-            return diff.TotalMinutes < 5;
         }
     }
 }
