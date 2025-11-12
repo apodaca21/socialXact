@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore;
 using SocialX.Data;
+using AspNet.Security.OAuth.GitHub;
+using Microsoft.AspNetCore.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +26,14 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 })
 .AddDefaultUI()
 .AddEntityFrameworkStores<ApplicationDbContext>();
+
+builder.Services.AddAuthentication()
+    .AddGitHub(options =>
+    {
+        options.ClientId = builder.Configuration["Authentication:GitHub:ClientId"];
+        options.ClientSecret = builder.Configuration["Authentication:GitHub:ClientSecret"];
+        options.Scope.Add("user:email");
+    });
 
 builder.Services.AddControllersWithViews();
 builder.Services.AddRazorPages();
