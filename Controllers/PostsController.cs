@@ -35,17 +35,12 @@ namespace SocialX.Controllers
         [HttpPost]
         [Authorize]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Content")] Post post)
+        public async Task<IActionResult> Create(string content)
         {
-            if (!ModelState.IsValid)
+            if (string.IsNullOrWhiteSpace(content) || content.Length > 140)
             {
-                var posts = await _context.Posts
-                    .Include(p => p.User)
-                    .OrderByDescending(p => p.CreatedAt)
-                    .Take(FeedSize)
-                    .ToListAsync();
-
-                return View("Index", posts);
+                TempData["Error"] = "El contenido debe tener entre 1 y 140 caracteres.";
+                return RedirectToAction(nameof(Index));
             }
 
             var user = await _userManager.GetUserAsync(User);
@@ -54,9 +49,13 @@ namespace SocialX.Controllers
                 return Challenge();
             }
 
-            post.UserId = user.Id;
-            post.CreatedAt = DateTime.UtcNow;
-            post.IsEdited = false;
+            var post = new Post
+            {
+                Content = content.Trim(),
+                UserId = user.Id,
+                CreatedAt = DateTime.UtcNow,
+                IsEdited = false
+            };
 
             _context.Posts.Add(post);
             await _context.SaveChangesAsync();
@@ -81,10 +80,13 @@ namespace SocialX.Controllers
         [HttpPost]
         [Authorize]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Content")] Post edited)
+        public async Task<IActionResult> Edit(int id, string content)
         {
-            if (!ModelState.IsValid)
-                return View(edited);
+            if (string.IsNullOrWhiteSpace(content) || content.Length > 140)
+            {
+                TempData["Error"] = "El contenido debe tener entre 1 y 140 caracteres.";
+                return RedirectToAction(nameof(Index));
+            }
 
             var post = await _context.Posts.FindAsync(id);
             if (post == null)
@@ -94,7 +96,7 @@ namespace SocialX.Controllers
             if (user == null || post.UserId != user.Id || !post.CanEdit)
                 return Forbid();
 
-            post.Content = edited.Content;
+            post.Content = content.Trim();
             post.IsEdited = true;
             post.UpdatedAt = DateTime.UtcNow;
 

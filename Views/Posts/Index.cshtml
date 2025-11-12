@@ -10,9 +10,15 @@
 
 <h2 class="mb-3">SocialX - Feed</h2>
 
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+
 @if (SignInManager.IsSignedIn(User))
 {
     <form asp-action="Create" method="post" class="mb-4">
+        @Html.AntiForgeryToken()
         <div class="form-group">
             <label for="Content">¿Qué estás pensando?</label>
             <textarea id="Content" name="Content"
