@@ -1,19 +1,18 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore;
 using SocialX.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Connection string
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString));
+    options.UseSqlite(connectionString));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-// Identity con UI por defecto
 builder.Services.AddDefaultIdentity<IdentityUser>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;
@@ -37,7 +36,7 @@ if (app.Environment.IsDevelopment())
 }
 else
 {
-    app.UseExceptionHandler("/Home/Error");
+    app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
 
@@ -49,11 +48,10 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Home = feed de posts
+app.MapRazorPages();
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Posts}/{action=Index}/{id?}");
-
-app.MapRazorPages();
 
 app.Run();

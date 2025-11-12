@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using SocialX.Models;
-using System.Collections.Generic;
 
 namespace SocialX.Data
 {

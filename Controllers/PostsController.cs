@@ -7,13 +7,12 @@ using SocialX.Models;
 
 namespace SocialX.Controllers
 {
-    [Authorize]
     public class PostsController : Controller
     {
         private readonly ApplicationDbContext _context;
         private readonly UserManager<IdentityUser> _userManager;
 
-        private const int FeedSize = 30; // entre 15 y 50
+        private const int FeedSize = 30;
 
         public PostsController(ApplicationDbContext context, UserManager<IdentityUser> userManager)
         {
@@ -21,7 +20,6 @@ namespace SocialX.Controllers
             _userManager = userManager;
         }
 
-        // Feed visible para todos
         [AllowAnonymous]
         public async Task<IActionResult> Index()
         {
@@ -34,8 +32,8 @@ namespace SocialX.Controllers
             return View(posts);
         }
 
-        // Crear post (solo logueados)
         [HttpPost]
+        [Authorize]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Content")] Post post)
         {
@@ -53,7 +51,7 @@ namespace SocialX.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
-                return Challenge(); // fuerza login
+                return Challenge();
             }
 
             post.UserId = user.Id;
@@ -66,7 +64,7 @@ namespace SocialX.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // GET: Editar
+        [Authorize]
         public async Task<IActionResult> Edit(int id)
         {
             var post = await _context.Posts.FindAsync(id);
@@ -80,8 +78,8 @@ namespace SocialX.Controllers
             return View(post);
         }
 
-        // POST: Editar
         [HttpPost]
+        [Authorize]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, [Bind("Id,Content")] Post edited)
         {
@@ -101,6 +99,25 @@ namespace SocialX.Controllers
             post.UpdatedAt = DateTime.UtcNow;
 
             _context.Update(post);
+            await _context.SaveChangesAsync();
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id)
+        {
+            var post = await _context.Posts.FindAsync(id);
+            if (post == null)
+                return NotFound();
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null || post.UserId != user.Id)
+                return Forbid();
+
+            _context.Posts.Remove(post);
             await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));

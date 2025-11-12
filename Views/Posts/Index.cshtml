@@ -61,12 +61,32 @@ else
                             }
                         </span>
                     </div>
-                    @if (canEdit)
-                    {
-                        <a asp-action="Edit" asp-route-id="@post.Id" class="btn btn-sm btn-link">
-                            Editar
-                        </a>
-                    }
+                    <div>
+                        @if (canEdit)
+                        {
+                            <a asp-action="Edit" asp-route-id="@post.Id" class="btn btn-sm btn-outline-primary">
+                                Editar
+                            </a>
+                        }
+                        @{
+                            var canDelete = false;
+                            if (SignInManager.IsSignedIn(User))
+                            {
+                                var currentUserId = UserManager.GetUserId(User);
+                                canDelete = post.UserId == currentUserId;
+                            }
+                        }
+                        @if (canDelete)
+                        {
+                            <form asp-action="Delete" asp-route-id="@post.Id" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                        onclick="return confirm('¿Estás seguro de que deseas eliminar este post?');">
+                                    Eliminar
+                                </button>
+                            </form>
+                        }
+                    </div>
                 </div>
                 <p class="mt-2 mb-0">@post.Content</p>
             </li>
